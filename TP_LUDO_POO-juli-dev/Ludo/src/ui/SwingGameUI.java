@@ -1,0 +1,214 @@
+package ui;
+
+import board.Board;
+import board.MainPathSquare;
+import board.FinalPathSquare;
+import board.HomeBaseSquare;
+import core.Piece;
+import game.Game;
+import game.GameState;
+
+import javax.swing.*;
+import java.awt.*;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Interfaz gráfica de Ludo: dibuja el tablero y muestra controles Swing.
+ */
+public class SwingGameUI extends JFrame {
+    private static final int GRID_SIZE = 15;
+    private static final int CENTER = GRID_SIZE / 2;
+
+    private final Game game;
+    private final JLabel currentPlayerLabel = new JLabel();
+    private final JPanel boardPanel = new JPanel(new GridLayout(GRID_SIZE, GRID_SIZE));
+    private final JButton rollButton = new JButton("Tirar dado");
+    private final JButton resignButton = new JButton("Rendirse");
+
+    public SwingGameUI(Game game) {
+        super("Ludo");
+        this.game = game;
+        game.startGame();
+
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLayout(new BorderLayout(5, 5));
+
+        JPanel top = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        top.add(currentPlayerLabel);
+        add(top, BorderLayout.NORTH);
+
+        boardPanel.setPreferredSize(new Dimension(600, 600));
+        add(boardPanel, BorderLayout.CENTER);
+
+        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        bottom.add(rollButton);
+        bottom.add(resignButton);
+        add(bottom, BorderLayout.SOUTH);
+
+        rollButton.addActionListener(e -> {
+            if (game.getState() == GameState.IN_PROGRESS) {
+                game.playTurn();
+                refreshUI();
+            }
+        });
+
+        resignButton.addActionListener(e -> {
+            if (game.getState() == GameState.IN_PROGRESS) {
+                game.getCurrentPlayer().rendirse();
+                game.skipTurn();
+                refreshUI();
+            }
+        });
+
+        refreshUI();
+        pack();
+        setLocationRelativeTo(null);
+    }
+
+    private void refreshUI() {
+        if (game.getState() == GameState.IN_PROGRESS) {
+            var p = game.getCurrentPlayer();
+            currentPlayerLabel.setText("Turno de: " + p.getName() + " (" + p.getColor() + ")");
+            rollButton.setEnabled(true);
+            resignButton.setEnabled(true);
+        } else {
+            currentPlayerLabel.setText("Juego terminado");
+            rollButton.setEnabled(false);
+            resignButton.setEnabled(false);
+        }
+
+        boardPanel.removeAll();
+        JPanel[][] cells = new JPanel[GRID_SIZE][GRID_SIZE];
+        Point[] mainCoords = generateMainPath();
+
+        // Crear celdas base
+        for (int row = 0; row < GRID_SIZE; row++) {
+            for (int col = 0; col < GRID_SIZE; col++) {
+                JPanel cell = new JPanel();
+                cell.setBorder(BorderFactory.createLineBorder(java.awt.Color.DARK_GRAY));
+                cell.setBackground(getCellColor(row, col));
+
+                // Mostrar índice en camino principal
+                for (int i = 0; i < mainCoords.length; i++) {
+                    Point pt = mainCoords[i];
+                    if (pt.y == row && pt.x == col) {
+                        JLabel number = new JLabel(String.valueOf(i));
+                        number.setFont(new Font("Arial", Font.PLAIN, 9));
+                        cell.add(number);
+                        break;
+                    }
+                }
+
+                boardPanel.add(cell);
+                cells[row][col] = cell;
+            }
+        }
+
+        // Dibujar piezas en camino principal
+        List<MainPathSquare> mainPath = game.getBoard().getMainPath();
+        for (int i = 0; i < mainPath.size(); i++) {
+            Point coord = mainCoords[i];
+            JPanel cell = cells[coord.y][coord.x];
+            for (Piece piece : mainPath.get(i).getPieces()) {
+                cell.add(createPieceLabel(piece));
+            }
+        }
+
+        // Mostrar piezas en casas
+        for (Map.Entry<core.Color, HomeBaseSquare> entry : game.getBoard().getHomeBaseSquares().entrySet()) {
+            core.Color color = entry.getKey();
+            List<Piece> pieces = entry.getValue().getPieces();
+            Point loc = getHomeBaseCoord(color);
+            JPanel cell = cells[loc.y][loc.x];
+            for (Piece piece : pieces) {
+                cell.add(createPieceLabel(piece));
+            }
+        }
+
+        // Mostrar piezas en caminos finales
+        for (Map.Entry<core.Color, List<FinalPathSquare>> entry : game.getBoard().getFinalPaths().entrySet()) {
+            core.Color color = entry.getKey();
+            for (FinalPathSquare square : entry.getValue()) {
+                Point coord = getFinalPathCoord(color, square.getPosition());
+                JPanel cell = cells[coord.y][coord.x];
+                for (Piece piece : square.getPieces()) {
+                    cell.add(createPieceLabel(piece));
+                }
+            }
+        }
+
+        boardPanel.revalidate();
+        boardPanel.repaint();
+    }
+
+    private JLabel createPieceLabel(Piece p) {
+        JLabel lbl = new JLabel(String.valueOf(p.getId()));
+        lbl.setOpaque(true);
+        lbl.setBackground(toAwtColor(p.getColor()));
+        lbl.setForeground(java.awt.Color.WHITE);
+        lbl.setHorizontalAlignment(SwingConstants.CENTER);
+        lbl.setPreferredSize(new Dimension(20, 20));
+        lbl.setBorder(BorderFactory.createLineBorder(java.awt.Color.BLACK));
+        return lbl;
+    }
+
+    private static Point[] generateMainPath() {
+        int[] indices = {
+                90,91,92,93,94,95,96,81,66,51,36,21,6,7,8,
+                23,38,53,68,83,98,99,100,101,102,103,104,
+                119,134,133,132,131,130,129,128,143,158,
+                173,188,203,218,217,216,201,186,171,156,
+                141,126,125,124,123,122,121,120,105
+        };
+        Point[] path = new Point[indices.length];
+        for (int i = 0; i < indices.length; i++) {
+            int idx = indices[i];
+            path[i] = new Point(idx % GRID_SIZE, idx / GRID_SIZE);
+        }
+        return path;
+    }
+
+    private Point getHomeBaseCoord(core.Color color) {
+        return switch (color) {
+            case RED -> new Point(1, 1);
+            case GREEN -> new Point(GRID_SIZE - 2, 1);
+            case YELLOW -> new Point(GRID_SIZE - 2, GRID_SIZE - 2);
+            case BLUE -> new Point(1, GRID_SIZE - 2);
+        };
+    }
+
+    private Point getFinalPathCoord(core.Color color, int position) {
+        return switch (color) {
+            case RED -> new Point(1 + position, CENTER);
+            case GREEN -> new Point(CENTER, 1 + position);
+            case YELLOW -> new Point(GRID_SIZE - 2 - position, CENTER);
+            case BLUE -> new Point(CENTER, GRID_SIZE - 2 - position);
+        };
+    }
+
+    private java.awt.Color toAwtColor(core.Color c) {
+        return switch (c) {
+            case RED -> java.awt.Color.RED;
+            case GREEN -> java.awt.Color.GREEN;
+            case BLUE -> java.awt.Color.BLUE;
+            case YELLOW -> java.awt.Color.YELLOW;
+        };
+    }
+
+    private java.awt.Color getCellColor(int row, int col) {
+        int n = GRID_SIZE;
+        if (row < 6 && col < 6)              return java.awt.Color.RED;
+        if (row < 6 && col >= n - 6)         return java.awt.Color.GREEN;
+        if (row >= n - 6 && col >= n - 6)    return java.awt.Color.YELLOW;
+        if (row >= n - 6 && col < 6)         return java.awt.Color.BLUE;
+        if (row == CENTER && col >= 1 && col <= 5)         return java.awt.Color.RED;
+        if (col == CENTER && row >= 1 && row <= 5)         return java.awt.Color.GREEN;
+        if (row == CENTER && col >= 9 && col <= 13)        return java.awt.Color.YELLOW;
+        if (col == CENTER && row >= 9 && row <= 13)        return java.awt.Color.BLUE;
+        if (row >= CENTER - 1 && row <= CENTER + 1 && col >= CENTER - 1 && col <= CENTER + 1) {
+            return java.awt.Color.WHITE;
+        }
+        return java.awt.Color.WHITE;
+    }
+}

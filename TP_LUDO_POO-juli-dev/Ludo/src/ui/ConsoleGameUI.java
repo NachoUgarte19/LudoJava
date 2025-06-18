@@ -1,0 +1,83 @@
+package ui;
+
+import board.Board;
+import core.Player;
+import core.Color;
+import game.Game;
+import game.GameState;
+import ui.InteractiveGame;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+
+/**
+ * Interfaz de consola para jugar Ludo con configuración fija y bucle de juego.
+ */
+public class ConsoleGameUI {
+    private final Game game;
+    private final Scanner scanner = new Scanner(System.in);
+
+    public ConsoleGameUI(Game game) {
+        this.game = game;
+    }
+
+    /**
+     * Inicia el bucle de juego en consola.
+     */
+    public void start() {
+        game.startGame();
+        while (game.getState() == GameState.IN_PROGRESS) {
+            Player current = game.getCurrentPlayer();
+            System.out.println("\n--- Turno de " + current.getName() + " (" + current.getColor() + ") ---");
+            System.out.print("Presiona 't' para tirar dado, 'r' para rendirse: ");
+
+            String input = scanner.nextLine().trim().toLowerCase();
+            if ("t".equals(input)) {
+                game.playTurn();
+            } else if ("r".equals(input)) {
+                current.rendirse();
+                game.skipTurn();
+            } else {
+                System.out.println("Opción no válida. Intenta de nuevo.");
+            }
+        }
+        System.out.println("\n=== JUEGO TERMINADO ===");
+    }
+
+    /**
+     * Configuración previa y arranque del juego en consola con valores fijos.
+     */
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.println("--- ¡Bienvenido a Ludo! (Consola) ---");
+
+        // 1) Cantidad de jugadores
+        int numPlayers;
+        do {
+            System.out.print("Número de jugadores (2-" + Color.values().length + "): ");
+            while (!scanner.hasNextInt()) scanner.next();
+            numPlayers = scanner.nextInt();
+            scanner.nextLine();
+        } while (numPlayers < 2 || numPlayers > Color.values().length);
+
+        // 2) Nombres de jugadores
+        List<Player> players = new ArrayList<>();
+        Color[] colors = Color.values();
+        for (int i = 0; i < numPlayers; i++) {
+            System.out.print("Nombre Jugador " + (i+1) + ": ");
+            String name = scanner.nextLine().trim();
+            if (name.isEmpty()) name = "Jugador" + (i+1);
+            Player p = new Player(name, colors[i]);
+            p.initializePieces(4);
+            players.add(p);
+        }
+
+        // Camino principal fijo en 56 y fichas por jugador siempre 4
+        Game game = new InteractiveGame(players, 56);
+
+        // Iniciar la IU de consola
+        new ConsoleGameUI(game).start();
+    }
+}

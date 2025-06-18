@@ -1,0 +1,16 @@
+### IntelliJ IDEA ###
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+.idea
+.idea/
+*.iml
+### VS Code ###
+.vscode/
+*.xml
+### Mac OS ###
+.DS_Store
+/.idea/
+.idea/vcs.xml
+.idea/modules.xml
+.idea/misc.xml
