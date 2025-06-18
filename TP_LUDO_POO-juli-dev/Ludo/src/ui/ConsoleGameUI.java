@@ -1,6 +1,10 @@
 package ui;
 
-import board.Board;
+import board.AbstractSquare;
+import board.FinalPathSquare;
+import board.HomeBaseSquare;
+import board.MainPathSquare;
+import core.Piece;
 import core.Player;
 import core.Color;
 import game.Game;
@@ -30,19 +34,50 @@ public class ConsoleGameUI {
         while (game.getState() == GameState.IN_PROGRESS) {
             Player current = game.getCurrentPlayer();
             System.out.println("\n--- Turno de " + current.getName() + " (" + current.getColor() + ") ---");
-            System.out.print("Presiona 't' para tirar dado, 'r' para rendirse: ");
+            displayBoard();
+            System.out.print("Presiona 't' para tirar dado, 'r' para rendirte: ");
 
             String input = scanner.nextLine().trim().toLowerCase();
             if ("t".equals(input)) {
                 game.playTurn();
             } else if ("r".equals(input)) {
                 current.rendirse();
+                System.out.println(current.getName() + " se rindió.");
                 game.skipTurn();
             } else {
                 System.out.println("Opción no válida. Intenta de nuevo.");
             }
         }
         System.out.println("\n=== JUEGO TERMINADO ===");
+        if (game.getState() == GameState.FINISHED) {
+            System.out.println("¡Gracias por jugar!");
+        }
+    }
+
+    /**
+     * Muestra el tablero en consola: casillas principales, finales y base.
+     */
+    private void displayBoard() {
+        System.out.println("Tablero:");
+        for (Player p : game.getPlayers()) {
+            System.out.printf("%s (%s): ", p.getName(), p.getColor());
+            for (Piece piece : p.getPieces()) {
+                AbstractSquare sq = piece.getCurrentSquare();
+                String position;
+                if (sq == null || sq instanceof HomeBaseSquare) {
+                    position = "B"; // Base
+                } else if (sq instanceof MainPathSquare) {
+                    position = String.valueOf(((MainPathSquare) sq).getPosition());
+                } else if (sq instanceof FinalPathSquare) {
+                    position = "F" + ((FinalPathSquare) sq).getPosition();
+                } else {
+                    position = "?";
+                }
+                String label = String.format("%d(%s)", piece.getId(), position);
+                System.out.print(label + " ");
+            }
+            System.out.println();
+        }
     }
 
     /**
