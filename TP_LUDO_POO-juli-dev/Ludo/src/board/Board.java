@@ -4,10 +4,7 @@ import core.Color;
 import core.Piece;
 import core.Player;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Board {
     public static final int FINAL_PATH_LENGTH = 6;
@@ -30,12 +27,17 @@ public class Board {
         this.mainPathSize = mainPathSize;
         this.lastMainPathIndex = mainPathSize - 1;
 
+        Set<Integer> safeIndices = Set.of(1, 15, 29, 43);
+
         for (int i = 0; i < this.mainPathSize; i++) {
             boolean isSpecial = false;
             if (!players.isEmpty() && (this.mainPathSize / players.size() > 0)) { // Evitar división por cero
                 if (i % (this.mainPathSize / players.size()) == 0) {
                     isSpecial = true;
                 }
+            }
+            if (safeIndices.contains(i)) {
+                isSpecial = true;
             }
             mainPath.add(new MainPathSquare(i, isSpecial));
         }
@@ -115,17 +117,25 @@ public class Board {
     }
 
     private void moveOnMainPath(Piece piece, MainPathSquare current, int roll) {
+        int entry = ENTRY_POS.get(piece.getColor());
+        int pathSize = mainPathSize;   // 56 en tu caso
+
+        // posición actual en [0..pathSize-1]
         int pos = current.getPosition();
-        int next = pos + roll;
-        // Si sobrepasa la última casilla del MainPath:
-        if (next > lastMainPathIndex) {
-            // Entra al primer cuadrado del FinalPath
-            FinalPathSquare entry = finalPaths.get(piece.getColor()).get(0);
-            handleLanding(piece, entry, false);
+
+        // calculamos cuánto hemos avanzado desde la entrada, en modo circular:
+        int rel = (pos - entry + pathSize) % pathSize;
+        int relNext = rel + roll;
+
+        if (relNext >= pathSize) {
+            // ¡completaste la vuelta! pasas al primer FinalPathSquare
+            FinalPathSquare fps = finalPaths.get(piece.getColor()).get(0);
+            handleLanding(piece, fps, false);
         } else {
-            // Movimiento circular normal
-            MainPathSquare dest = mainPath.get(next % mainPathSize);
-            handleLanding(piece, dest, false);
+            // aún no diste la vuelta: nueva posición circular
+            int newPos = (entry + relNext) % pathSize;
+            MainPathSquare target = mainPath.get(newPos);
+            handleLanding(piece, target, false);
         }
     }
 
@@ -204,6 +214,13 @@ public class Board {
         int centerIdx = mainPathSize / 2;
         return mainPath.get(centerIdx);
     }
+
+    private static final Map<core.Color,Integer> ENTRY_POS = Map.of(
+            core.Color.RED,    1,
+            core.Color.GREEN,  15,
+            core.Color.YELLOW, 29,
+            core.Color.BLUE,   43
+    );
 
 
 

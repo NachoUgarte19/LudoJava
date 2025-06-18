@@ -95,6 +95,19 @@ public class SwingGameUI extends JFrame {
                 JPanel cell = new JPanel();
                 cell.setBorder(BorderFactory.createLineBorder(java.awt.Color.DARK_GRAY));
                 cell.setBackground(getCellColor(row, col));
+                // Resaltar casilla de entrada para cada color
+                int[] entryIndices = {1, 15, 29, 43};
+                core.Color[] entryColors = {
+                        core.Color.RED, core.Color.GREEN, core.Color.YELLOW, core.Color.BLUE
+                };
+                for (int k = 0; k < entryIndices.length; k++) {
+                    Point ep = mainCoords[entryIndices[k]];
+                    if (ep.y == row && ep.x == col) {
+                        cell.setBackground(toAwtColor(entryColors[k]));
+                        break;
+                    }
+                }
+
 
                 // Si es posición de base, forzar fondo blanco para ver fichas
                 for (Point[] arr : HOME_BASE_COORDS.values()) {
