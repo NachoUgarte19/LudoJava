@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 public class Board {
-    public static final int FINAL_PATH_LENGTH = 4;
+    public static final int FINAL_PATH_LENGTH = 6;
 
     private final int mainPathSize;
     private final int lastMainPathIndex;
@@ -114,81 +114,41 @@ public class Board {
         }
     }
 
-    private void moveOnMainPath(Piece piece, MainPathSquare currentMpSquare, int roll) {
-        int currentMainPathPos = currentMpSquare.getPosition();
-        Color pieceColor = piece.getColor();
-        int potentialNextMainPathPos = currentMainPathPos + roll;
-
-        if (potentialNextMainPathPos > this.lastMainPathIndex) {
-            int stepsIntoFinalPath = potentialNextMainPathPos - this.lastMainPathIndex;
-
-            if (stepsIntoFinalPath >= 1 && stepsIntoFinalPath <= FINAL_PATH_LENGTH) {
-                List<FinalPathSquare> playerFinalPath = finalPaths.get(pieceColor);
-                if (playerFinalPath != null && !playerFinalPath.isEmpty()) {
-                    FinalPathSquare targetFps = playerFinalPath.get(stepsIntoFinalPath - 1);
-
-                    boolean canLand = true;
-                    if (!targetFps.isEmpty()) {
-                        if (targetFps.getPieces().getFirst().getColor() == pieceColor) {
-                            // No se puede moverse a una casilla de tu final path si ya está ocupada por OTRA de tus fichas.
-                            if (targetFps.getPieces().getFirst() != piece) { // comprobar que no es la misma ficha
-                                canLand = false;
-                            }
-                        }
-                    }
-
-                    if (canLand) {
-                        handleLanding(piece, targetFps, false);
-                        return;
-                    } else {
-                        // No puede entrar al FinalPath (casilla ocupada por propia ficha), aterriza al final del MainPath.
-                        System.out.println("Ficha " + piece.getId() + " ("+pieceColor+") no pudo entrar a FinalPath (casilla " + targetFps.getPosition() +" ocupada). Aterriza en MainPath " + this.lastMainPathIndex);
-                        handleLanding(piece, mainPath.get(this.lastMainPathIndex), false);
-                        return;
-                    }
-                }
-            }
-            // Si stepsIntoFinalPath es inválido o el FinalPath no está configurado, la ficha cae en la última casilla del MainPath.
-            System.out.println("Ficha " + piece.getId() + " ("+pieceColor+") con tiro efectivo " + stepsIntoFinalPath + " para FinalPath es inválido. Aterriza en MainPath " + this.lastMainPathIndex);
-            handleLanding(piece, mainPath.get(this.lastMainPathIndex), false);
+    private void moveOnMainPath(Piece piece, MainPathSquare current, int roll) {
+        int pos = current.getPosition();
+        int next = pos + roll;
+        // Si sobrepasa la última casilla del MainPath:
+        if (next > lastMainPathIndex) {
+            // Entra al primer cuadrado del FinalPath
+            FinalPathSquare entry = finalPaths.get(piece.getColor()).get(0);
+            handleLanding(piece, entry, false);
         } else {
-            MainPathSquare nextSquareOnMainPath = mainPath.get(potentialNextMainPathPos % this.mainPathSize);
-            handleLanding(piece, nextSquareOnMainPath, false);
+            // Movimiento circular normal
+            MainPathSquare dest = mainPath.get(next % mainPathSize);
+            handleLanding(piece, dest, false);
         }
     }
 
-    private void moveOnFinalPath(Piece piece, FinalPathSquare currentFpSquare, int roll) {
-        Color pieceColor = piece.getColor();
-        List<FinalPathSquare> playerFinalPath = finalPaths.get(pieceColor);
 
-        int currentLocalPos = currentFpSquare.getPosition();
-        int nextLocalPos = currentLocalPos + roll;
-        FinalPathSquare targetFps;
+    private void moveOnFinalPath(Piece piece, FinalPathSquare current, int roll) {
+        List<FinalPathSquare> fp = finalPaths.get(piece.getColor());
+        int pos = current.getPosition();
+        int next = pos + roll;
 
-        if (nextLocalPos >= FINAL_PATH_LENGTH - 1) {
-            targetFps = playerFinalPath.get(FINAL_PATH_LENGTH - 1);
-        } else if (nextLocalPos >= 0) {
-            targetFps = playerFinalPath.get(nextLocalPos);
+        if (next >= 0 && next < FINAL_PATH_LENGTH - 1) {
+            // Avanza normalmente dentro del tramo
+            handleLanding(piece, fp.get(next), false);
+        } else if (next == FINAL_PATH_LENGTH - 1) {
+            // Llegada exacta a la última casilla (meta)
+            handleLanding(piece, fp.get(FINAL_PATH_LENGTH - 1), false);
         } else {
-            System.err.println("Error: Posición negativa ("+ nextLocalPos +") calculada en camino final para ficha " + piece.getId());
-            currentFpSquare.addPiece(piece);
-            return;
-        }
-
-        boolean canLand = true;
-        if (!targetFps.isEmpty()) {
-            if (targetFps.getPieces().getFirst().getColor() == pieceColor && targetFps.getPieces().getFirst() != piece) {
-                canLand = false; // Ocupada por OTRA ficha del mismo color
-            }
-        }
-
-        if (canLand) {
-            handleLanding(piece, targetFps, false);
-        } else {
-            System.out.println("Ficha " + piece.getId() + " ("+pieceColor+") no pudo moverse a FinalPath casilla " + targetFps.getPosition() +" (ocupada). Se queda en " + currentLocalPos);
-            currentFpSquare.addPiece(piece); // Se queda donde estaba
+            // Roll no válido para avanzar: permanece en la misma casilla
+            System.out.println("Tiro no exacto en FinalPath (" + roll + "). Ficha "
+                    + piece.getId() + " se queda en pos " + pos + ".");
+            handleLanding(piece, current, false);
         }
     }
+
 
     private void handleLanding(Piece movingPiece, AbstractSquare targetSquare, boolean isBoardEntryFromBase) {
         if (targetSquare instanceof MainPathSquare && !isBoardEntryFromBase) {
@@ -235,6 +195,16 @@ public class Board {
                 return mainPath.get(1);
         }
     }
+
+    /**
+     * Devuelve la casilla central del tablero (donde convergen todas las fichas al final).
+     */
+    public MainPathSquare getCentralSquare() {
+        // Usa el índice medio del mainPath
+        int centerIdx = mainPathSize / 2;
+        return mainPath.get(centerIdx);
+    }
+
 
 
 }
