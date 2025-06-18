@@ -55,15 +55,28 @@ public class SwingInteractiveGame extends Game {
         String[] items = lista.stream()
                 .map(p -> "Ficha " + p.getId())
                 .toArray(String[]::new);
-        String elegido = (String) JOptionPane.showInputDialog(
-                null,
-                mensaje,
-                "Selecciona ficha",
-                JOptionPane.PLAIN_MESSAGE,
-                null,
-                items,
-                items[0]
-        );
+        String elegido = null;
+        // Repetir hasta que el usuario elija algo
+        while (elegido == null) {
+            elegido = (String) JOptionPane.showInputDialog(
+                    null,
+                    mensaje,
+                    "Selecciona ficha",
+                    JOptionPane.PLAIN_MESSAGE,
+                    null,
+                    items,
+                    items[0]
+            );
+            if (elegido == null) {
+                // El usuario cerró el diálogo o pulsó Cancelar: mostramos un mensaje y volvemos a pedir
+                JOptionPane.showMessageDialog(
+                        null,
+                        "Debes seleccionar una ficha para continuar.",
+                        "Selección obligatoria",
+                        JOptionPane.WARNING_MESSAGE
+                );
+            }
+        }
         int id = Integer.parseInt(elegido.split(" ")[1]);
         return lista.stream()
                 .filter(p -> p.getId() == id)
