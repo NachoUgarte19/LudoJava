@@ -200,8 +200,15 @@ public class Board {
                         System.out.println("¡Se captura la Ficha " + movingPiece.getId() + "(" + movingPiece.getColor() +
                                 ") captura a  la ficha " + existingPiece.getId() + "(" + existingPiece.getColor() +
                                 ") en la casilla del MainPath " + mpTarget.getPosition());
+                        // 1) Retirar de la casilla:
                         targetSquare.removePiece(existingPiece);
-                        existingPiece.moveTo(null);
+
+                        // 2) Añadir a la base de su color:
+                        HomeBaseSquare home = homeBaseSquares.get(existingPiece.getColor());
+                        home.addPiece(existingPiece);
+
+                        // 3) Decirle a la pieza dónde está ahora:
+                        existingPiece.moveTo(home);
                     }
                 }
             }
