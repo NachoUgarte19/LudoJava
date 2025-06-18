@@ -212,9 +212,22 @@ public class Board {
 
     public MainPathSquare getBoardEntrySquareForColor(Color color) {
         if (this.mainPath.isEmpty()) {
-            throw new IllegalStateException("el Main path no se inicializo está vacío.");
+            throw new IllegalStateException("El camino principal no está inicializado.");
         }
-        return this.mainPath.getFirst();
+        // Entradas por color: Rojo=1, Verde=15, Amarillo=29, Azul=43
+        switch (color) {
+            case RED:
+                return mainPath.get(1);
+            case GREEN:
+                return mainPath.get(15);
+            case YELLOW:
+                return mainPath.get(29);
+            case BLUE:
+                return mainPath.get(43);
+            default:
+                return mainPath.get(1);
+        }
     }
+
 
 }
