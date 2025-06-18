@@ -85,6 +85,11 @@ public class Board {
     }
 
     public void placePieceOnBoard(Piece piece, MainPathSquare targetSquare) {
+        // Si la ficha estaba en alguna casilla (p. e. base), la quitamos de allí:
+        if (piece.getCurrentSquare() != null) {
+            piece.getCurrentSquare().removePiece(piece);
+        }
+        // Ahora la colocamos en el tablero:
         handleLanding(piece, targetSquare, true);
     }
 

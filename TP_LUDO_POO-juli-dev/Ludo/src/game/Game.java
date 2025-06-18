@@ -9,6 +9,7 @@ import core.Piece;
 import core.Player;
 import utils.Dice;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,11 +30,21 @@ public abstract class Game {
         }
         this.players = players;
         this.board = new Board(players, mainPathSize);
+        // Colocar todas las fichas en su HomeBaseSquare tras inicializar el tablero
+        for (Player p : players) {
+            HomeBaseSquare base = board.getHomeBaseSquares().get(p.getColor());
+            for (Piece piece : p.getPieces()) {
+                base.addPiece(piece);
+                piece.moveTo(base);
+            }
+        }
         this.turn = new Turn(players);
     }
 
     /** Devuelve el tablero para uso en UIs. */
-    public Board getBoard() { return board; }
+    public Board getBoard() {
+        return board;
+    }
 
     public void startGame() {
         if (state == GameState.NOT_STARTED) {
@@ -49,8 +60,9 @@ public abstract class Game {
 
     /** Ejecuta un turno completo: lanzamiento, elección y movimiento de ficha. */
     public void playTurn() {
-        if (state != GameState.IN_PROGRESS) return;
-        if (currentPlayer == null) return;
+        if (state != GameState.IN_PROGRESS || currentPlayer == null) {
+            return;
+        }
 
         int roll = dice.roll();
         System.out.println("\n--- Turno de " + currentPlayer.getName() + " (" + currentPlayer.getColor() + ") ---");
@@ -60,53 +72,59 @@ public abstract class Game {
         List<Piece> notFinished = currentPlayer.getPieces().stream()
                 .filter(p -> !p.isFinished())
                 .collect(Collectors.toList());
-        // Lista en base y en tablero
-        List<Piece> inBase = notFinished.stream().filter(Piece::isInBase).collect(Collectors.toList());
-        List<Piece> onBoard = notFinished.stream().filter(p -> !p.isInBase()).collect(Collectors.toList());
+        // Obtener las piezas que están en base según el board
+        List<Piece> inBase = new ArrayList<>(board.getHomeBaseSquares().get(currentPlayer.getColor()).getPieces());
+        // Las demás están en el tablero
+        List<Piece> onBoard = notFinished.stream()
+                .filter(p -> !inBase.contains(p))
+                .collect(Collectors.toList());
 
-        Piece chosen = null;
-        AbstractSquare origin = null;
-
-        if (!inBase.isEmpty() && onBoard.isEmpty()) {
-            // Todas en base: solo se puede sacar con 6
+        // Caso A: todas en base
+        if (onBoard.isEmpty()) {
             if (roll == 6) {
-                chosen = choosePieceFromBase(inBase);
+                Piece chosen = choosePieceFromBase(inBase);
+                HomeBaseSquare base = board.getHomeBaseSquares().get(currentPlayer.getColor());
+                base.removePiece(chosen);
+                chosen.moveTo(null);
                 MainPathSquare entry = board.getBoardEntrySquareForColor(currentPlayer.getColor());
                 board.placePieceOnBoard(chosen, entry);
+                System.out.println(currentPlayer.getName() + " sacó ficha " + chosen.getId() + " al tablero.");
             } else {
                 System.out.println(currentPlayer.getName() + " necesita un 6 para sacar ficha.");
+                advanceToNextValidPlayer();
+                endGameIfNoActivePlayers();
             }
-        } else if (!inBase.isEmpty() && roll == 6) {
-            // Ambas opciones: base o mover en tablero
-            chosen = choosePieceOnSix(inBase, onBoard);
-            if (chosen.isInBase()) {
-                MainPathSquare entry = board.getBoardEntrySquareForColor(currentPlayer.getColor());
-                board.placePieceOnBoard(chosen, entry);
-            } else {
-                origin = chosen.getCurrentSquare();
-                board.move(chosen, roll);
-            }
-        } else if (!onBoard.isEmpty()) {
-            // Mover en tablero
-            chosen = choosePieceToMove(onBoard);
-            origin = chosen.getCurrentSquare();
-            board.move(chosen, roll);
-        } else {
-            System.out.println(currentPlayer.getName() + " no tiene movimientos disponibles.");
+            return;
         }
 
-        // Mensajes post-movimiento
-        if (chosen != null) {
-            if (origin != null) {
-                System.out.println(currentPlayer.getName() + " movió ficha " + chosen.getId() + " de "
-                        + origin.getPosition() + " a "
-                        + (chosen.getCurrentSquare() != null ? chosen.getCurrentSquare().getPosition() : "base") + ".");
-            } else {
-                System.out.println(currentPlayer.getName() + " sacó ficha " + chosen.getId() + " al tablero.");
-            }
-            if (chosen.isFinished()) {
-                System.out.println("¡Ficha " + chosen.getId() + " llegó a la meta!");
-            }
+        // Caso B: hay fichas en tablero
+        Piece chosen;
+        AbstractSquare origin;
+
+        // Si salió 6 y aún hay fichas en base, siempre sacar de base primero
+        if (roll == 6 && !inBase.isEmpty()) {
+            chosen = choosePieceFromBase(inBase);
+            HomeBaseSquare base = board.getHomeBaseSquares().get(currentPlayer.getColor());
+            base.removePiece(chosen);
+            chosen.moveTo(null);
+            MainPathSquare entry = board.getBoardEntrySquareForColor(currentPlayer.getColor());
+            board.placePieceOnBoard(chosen, entry);
+            System.out.println(currentPlayer.getName() + " sacó ficha " + chosen.getId() + " al tablero.");
+            advanceToNextValidPlayer();
+            endGameIfNoActivePlayers();
+            return;
+        }
+        // Si no entra en extracción, mover ficha en tablero
+        chosen = choosePieceToMove(onBoard);
+        origin = chosen.getCurrentSquare();
+        board.move(chosen, roll);
+        System.out.println(currentPlayer.getName() + " movió ficha " + chosen.getId()
+                + " de " + origin.getPosition()
+                + " a " + (chosen.getCurrentSquare() != null
+                ? chosen.getCurrentSquare().getPosition()
+                : "base") + ".");
+        if (chosen.isFinished()) {
+            System.out.println("¡Ficha " + chosen.getId() + " llegó a la meta!");
         }
 
         // Avanzar turno y fin de juego
@@ -117,26 +135,39 @@ public abstract class Game {
     // Métodos privados para turno
     private void advanceToNextValidPlayer() {
         if (players.stream().allMatch(p -> p.hasWon() || p.isRendido())) {
-            state = GameState.FINISHED; return;
+            state = GameState.FINISHED;
+            return;
         }
         Player next;
-        do { next = turn.nextTurn(); } while ((next.hasWon() || next.isRendido()) && state == GameState.IN_PROGRESS);
+        do {
+            next = turn.nextTurn();
+        } while ((next.hasWon() || next.isRendido()) && state == GameState.IN_PROGRESS);
         currentPlayer = next;
     }
 
     private void endGameIfNoActivePlayers() {
         long active = players.stream().filter(p -> !p.hasWon() && !p.isRendido()).count();
-        if (active == 0) state = GameState.FINISHED;
-        else if (active == 1) {
+        if (active == 0) {
+            state = GameState.FINISHED;
+        } else if (active == 1) {
             Player last = players.stream().filter(p -> !p.hasWon() && !p.isRendido()).findFirst().orElse(null);
             System.out.println("Jugador restante: " + (last != null ? last.getName() : ""));
             state = GameState.FINISHED;
         }
     }
 
-    public Player getCurrentPlayer() { return currentPlayer; }
-    public GameState getState() { return state; }
-    public void skipTurn() { advanceToNextValidPlayer(); endGameIfNoActivePlayers(); }
+    public Player getCurrentPlayer() {
+        return currentPlayer;
+    }
+
+    public GameState getState() {
+        return state;
+    }
+
+    public void skipTurn() {
+        advanceToNextValidPlayer();
+        endGameIfNoActivePlayers();
+    }
 
     // Métodos abstractos para elección de ficha
     protected abstract Piece choosePieceFromBase(List<Piece> piecesInBase);

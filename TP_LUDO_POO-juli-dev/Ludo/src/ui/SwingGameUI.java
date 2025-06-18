@@ -66,6 +66,13 @@ public class SwingGameUI extends JFrame {
         setLocationRelativeTo(null);
     }
 
+    private static final java.util.Map<core.Color, Point[]> HOME_BASE_COORDS = java.util.Map.of(
+            core.Color.RED,    new Point[]{ new Point(1,1),  new Point(1,3),  new Point(3,1),  new Point(3,3) },
+            core.Color.GREEN,  new Point[]{ new Point(11,1), new Point(13,1), new Point(11,3), new Point(13,3) },
+            core.Color.YELLOW, new Point[]{ new Point(11,11),new Point(13,11),new Point(11,13),new Point(13,13) },
+            core.Color.BLUE,   new Point[]{ new Point(1,11), new Point(3,11), new Point(1,13), new Point(3,13) }
+    );
+
     private void refreshUI() {
         if (game.getState() == GameState.IN_PROGRESS) {
             var p = game.getCurrentPlayer();
@@ -88,6 +95,16 @@ public class SwingGameUI extends JFrame {
                 JPanel cell = new JPanel();
                 cell.setBorder(BorderFactory.createLineBorder(java.awt.Color.DARK_GRAY));
                 cell.setBackground(getCellColor(row, col));
+
+                // Si es posición de base, forzar fondo blanco para ver fichas
+                for (Point[] arr : HOME_BASE_COORDS.values()) {
+                    for (Point b : arr) {
+                        if (b.x == col && b.y == row) {
+                            cell.setBackground(java.awt.Color.WHITE);
+                            break;
+                        }
+                    }
+                }
 
                 // Mostrar índice en camino principal
                 for (int i = 0; i < mainCoords.length; i++) {
@@ -116,13 +133,13 @@ public class SwingGameUI extends JFrame {
         }
 
         // Mostrar piezas en casas
-        for (Map.Entry<core.Color, HomeBaseSquare> entry : game.getBoard().getHomeBaseSquares().entrySet()) {
+        for (var entry : game.getBoard().getHomeBaseSquares().entrySet()) {
             core.Color color = entry.getKey();
+            Point[] coords = HOME_BASE_COORDS.get(color);
             List<Piece> pieces = entry.getValue().getPieces();
-            Point loc = getHomeBaseCoord(color);
-            JPanel cell = cells[loc.y][loc.x];
-            for (Piece piece : pieces) {
-                cell.add(createPieceLabel(piece));
+            for (int i = 0; i < pieces.size() && i < coords.length; i++) {
+                Point c = coords[i];
+                cells[c.y][c.x].add(createPieceLabel(pieces.get(i)));
             }
         }
 
