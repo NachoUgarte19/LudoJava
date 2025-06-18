@@ -5,6 +5,7 @@ import board.MainPathSquare;
 import board.FinalPathSquare;
 import board.HomeBaseSquare;
 import core.Piece;
+import core.Player;
 import game.Game;
 import game.GameState;
 
@@ -22,6 +23,10 @@ public class SwingGameUI extends JFrame {
 
     private final Game game;
     private final JLabel currentPlayerLabel = new JLabel();
+    private final JLabel rollResultLabel = new JLabel("Resultado dado: ");
+    private final JLabel eventLabel = new JLabel(" ");
+    private final JPanel infoPanel = new JPanel();
+    private boolean winnerAnnounced = false;
     private final JPanel boardPanel = new JPanel(new GridLayout(GRID_SIZE, GRID_SIZE));
     private final JButton rollButton = new JButton("Tirar dado");
     private final JButton resignButton = new JButton("Rendirse");
@@ -36,6 +41,8 @@ public class SwingGameUI extends JFrame {
 
         JPanel top = new JPanel(new FlowLayout(FlowLayout.CENTER));
         top.add(currentPlayerLabel);
+        top.add(rollResultLabel);
+        top.add(eventLabel);
         add(top, BorderLayout.NORTH);
 
         boardPanel.setPreferredSize(new Dimension(600, 600));
@@ -61,6 +68,10 @@ public class SwingGameUI extends JFrame {
             }
         });
 
+        infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
+        infoPanel.setBorder(BorderFactory.createTitledBorder("Estado de jugadores"));
+        add(infoPanel, BorderLayout.WEST);
+
         refreshUI();
         pack();
         setLocationRelativeTo(null);
@@ -74,13 +85,59 @@ public class SwingGameUI extends JFrame {
     );
 
     private void refreshUI() {
+        // 1) Si el juego ya terminó y aún no hemos anunciado al ganador:
+        if (game.getState() != GameState.IN_PROGRESS && !winnerAnnounced) {
+            // Buscamos al único jugador que no se rindió
+            Player winner = game.getPlayers().stream()
+                    .filter(p -> !p.isRendido())
+                    .findFirst()
+                    .orElse(null);
+            if (winner != null) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "¡El ganador es " + winner.getName() + " (" + winner.getColor() + ")!",
+                        "Fin de la partida",
+                        JOptionPane.INFORMATION_MESSAGE
+                );
+            }
+            winnerAnnounced = true;
+        }
+
+        // ACTUALIZAR INFO PANEL
+        infoPanel.removeAll();
+        for (Player p : game.getPlayers()) {
+            // Contar fichas en meta
+            long finishedCount = p.getPieces().stream().filter(Piece::isFinished).count();
+
+            // Panel por jugador
+            JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
+            // Circulo de color
+            JLabel colorDot = new JLabel("  ");
+            colorDot.setOpaque(true);
+            colorDot.setBackground(toAwtColor(p.getColor()));
+            colorDot.setPreferredSize(new Dimension(12, 12));
+            // Texto con nombre y contadores
+            JLabel text = new JLabel(p.getName()
+                    + " – Fichas en meta: " + finishedCount);
+            row.add(colorDot);
+            row.add(text);
+            infoPanel.add(row);
+        }
+        infoPanel.revalidate();
+        infoPanel.repaint();
+
         if (game.getState() == GameState.IN_PROGRESS) {
             var p = game.getCurrentPlayer();
             currentPlayerLabel.setText("Turno de: " + p.getName() + " (" + p.getColor() + ")");
+            rollResultLabel.setText("Resultado dado: " + game.getLastRoll());
             rollButton.setEnabled(true);
+            // Leer evento del modelo
+            String ev = game.getBoard().fetchLastEvent();
+            eventLabel.setText(ev.isEmpty() ? " " : ev);
             resignButton.setEnabled(true);
         } else {
             currentPlayerLabel.setText("Juego terminado");
+            rollResultLabel.setText("");
             rollButton.setEnabled(false);
             resignButton.setEnabled(false);
         }
@@ -116,17 +173,6 @@ public class SwingGameUI extends JFrame {
                             cell.setBackground(java.awt.Color.WHITE);
                             break;
                         }
-                    }
-                }
-
-                // Mostrar índice en camino principal
-                for (int i = 0; i < mainCoords.length; i++) {
-                    Point pt = mainCoords[i];
-                    if (pt.y == row && pt.x == col) {
-                        JLabel number = new JLabel(String.valueOf(i));
-                        number.setFont(new Font("Arial", Font.PLAIN, 9));
-                        cell.add(number);
-                        break;
                     }
                 }
 

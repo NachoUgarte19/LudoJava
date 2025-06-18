@@ -11,6 +11,7 @@ public class Board {
 
     private final int mainPathSize;
     private final int lastMainPathIndex;
+    private String lastEventMessage = "";
 
     private final List<MainPathSquare> mainPath = new ArrayList<>();
     private final Map<Color, HomeBaseSquare> homeBaseSquares = new HashMap<>();
@@ -167,9 +168,9 @@ public class Board {
                 List<Piece> piecesOnTargetCopy = new ArrayList<>(targetSquare.getPieces());
                 for (Piece existingPiece : piecesOnTargetCopy) {
                     if (existingPiece != movingPiece && existingPiece.getColor() != movingPiece.getColor()) {
-                        System.out.println("¡Se captura la Ficha " + movingPiece.getId() + "(" + movingPiece.getColor() +
-                                ") captura a  la ficha " + existingPiece.getId() + "(" + existingPiece.getColor() +
-                                ") en la casilla del MainPath " + mpTarget.getPosition());
+                        // Construyo el mensaje y lo guardo en el modelo
+                        lastEventMessage = movingPiece.getColor() + " capturó ficha " + existingPiece.getId() +
+                                " de color " + existingPiece.getColor();
                         // 1) Retirar de la casilla:
                         targetSquare.removePiece(existingPiece);
 
@@ -222,6 +223,11 @@ public class Board {
             core.Color.BLUE,   43
     );
 
-
+    /** Devuelve y limpia el último evento ocurrido en el tablero */
+    public String fetchLastEvent() {
+        String msg = lastEventMessage;
+        lastEventMessage = "";
+        return msg;
+    }
 
 }

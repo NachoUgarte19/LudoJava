@@ -20,6 +20,7 @@ public abstract class Game {
     private final Dice dice = new Dice();
     private final Turn turn;
     private final List<Player> players;
+    private int lastRoll = 0;
 
     private Player currentPlayer;
     private GameState state = GameState.NOT_STARTED;
@@ -39,6 +40,10 @@ public abstract class Game {
             }
         }
         this.turn = new Turn(players);
+    }
+
+    public int getLastRoll() {
+        return lastRoll;
     }
 
     /** Devuelve el tablero para uso en UIs. */
@@ -64,7 +69,8 @@ public abstract class Game {
             return;
         }
 
-        int roll = dice.roll();
+        lastRoll = dice.roll();
+        int roll = lastRoll;
         System.out.println("\n--- Turno de " + currentPlayer.getName() + " (" + currentPlayer.getColor() + ") ---");
         System.out.println(currentPlayer.getName() + " sacó un " + roll + "!");
 
@@ -173,4 +179,11 @@ public abstract class Game {
     protected abstract Piece choosePieceFromBase(List<Piece> piecesInBase);
     protected abstract Piece choosePieceOnSix(List<Piece> piecesInBase, List<Piece> piecesOnBoard);
     protected abstract Piece choosePieceToMove(List<Piece> piecesOnBoard);
+
+    /** Permite consultar la lista de jugadores desde la UI */
+    public List<Player> getPlayers() {
+        return players;
+    }
+
+
 }
