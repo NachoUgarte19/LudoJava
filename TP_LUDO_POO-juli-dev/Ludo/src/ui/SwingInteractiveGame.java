@@ -83,4 +83,5 @@ public class SwingInteractiveGame extends Game {
                 .findFirst()
                 .orElseThrow();
     }
+
 }
