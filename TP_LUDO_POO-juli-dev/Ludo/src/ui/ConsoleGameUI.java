@@ -81,14 +81,13 @@ public class ConsoleGameUI {
     }
 
     /**
-     * Configuración previa y arranque del juego en consola con valores fijos.
+     * Configuracion previa y arranque del juego en consola
      */
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
 
         System.out.println("--- ¡Bienvenido a Ludo! (Consola) ---");
 
-        // 1) Cantidad de jugadores
         int numPlayers;
         do {
             System.out.print("Número de jugadores (2-" + Color.values().length + "): ");
@@ -97,7 +96,6 @@ public class ConsoleGameUI {
             scanner.nextLine();
         } while (numPlayers < 2 || numPlayers > Color.values().length);
 
-        // 2) Nombres de jugadores
         List<Player> players = new ArrayList<>();
         Color[] colors = Color.values();
         for (int i = 0; i < numPlayers; i++) {
@@ -109,10 +107,9 @@ public class ConsoleGameUI {
             players.add(p);
         }
 
-        // Camino principal fijo en 56 y fichas por jugador siempre 4
         Game game = new InteractiveGame(players, 56);
 
-        // Iniciar la IU de consola
+        // inicio
         new ConsoleGameUI(game).start();
     }
 }

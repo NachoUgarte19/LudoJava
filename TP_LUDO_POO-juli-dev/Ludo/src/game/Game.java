@@ -31,7 +31,7 @@ public abstract class Game {
         }
         this.players = players;
         this.board = new Board(players, mainPathSize);
-        // Colocar todas las fichas en su HomeBaseSquare tras inicializar el tablero
+        // colocar todas las fichas en su HomeBaseSquare tras inicializar el tablero
         for (Player p : players) {
             HomeBaseSquare base = board.getHomeBaseSquares().get(p.getColor());
             for (Piece piece : p.getPieces()) {
@@ -78,14 +78,13 @@ public abstract class Game {
         List<Piece> notFinished = currentPlayer.getPieces().stream()
                 .filter(p -> !p.isFinished())
                 .collect(Collectors.toList());
-        // Obtener las piezas que están en base según el board
+        // Obtener las piezas que están en base
         List<Piece> inBase = new ArrayList<>(board.getHomeBaseSquares().get(currentPlayer.getColor()).getPieces());
-        // Las demás están en el tablero
         List<Piece> onBoard = notFinished.stream()
                 .filter(p -> !inBase.contains(p))
                 .collect(Collectors.toList());
 
-        // Caso A: todas en base
+        //  todas en base
         if (onBoard.isEmpty()) {
             if (roll == 6) {
                 Piece chosen = choosePieceFromBase(inBase);
@@ -103,11 +102,11 @@ public abstract class Game {
             return;
         }
 
-        // Caso B: hay fichas en tablero
+        // hay fichas en tablero
         Piece chosen;
         AbstractSquare origin;
 
-        // Si salió 6 y aún hay fichas en base, siempre sacar de base primero
+        // si salió 6 y aún hay fichas en base, siempre sacar de base primero
         if (roll == 6 && !inBase.isEmpty()) {
             chosen = choosePieceFromBase(inBase);
             HomeBaseSquare base = board.getHomeBaseSquares().get(currentPlayer.getColor());
@@ -120,7 +119,7 @@ public abstract class Game {
             endGameIfNoActivePlayers();
             return;
         }
-        // Si no entra en extracción, mover ficha en tablero
+        // si no entra en extracción, mover ficha en tablero
         chosen = choosePieceToMove(onBoard);
         origin = chosen.getCurrentSquare();
         board.move(chosen, roll);
@@ -133,12 +132,11 @@ public abstract class Game {
             System.out.println("¡Ficha " + chosen.getId() + " llegó a la meta!");
         }
 
-        // Avanzar turno y fin de juego
+        // avanzar turno y fin de juego
         advanceToNextValidPlayer();
         endGameIfNoActivePlayers();
     }
 
-    // Métodos privados para turno
     private void advanceToNextValidPlayer() {
         if (players.stream().allMatch(p -> p.hasWon() || p.isRendido())) {
             state = GameState.FINISHED;
@@ -175,7 +173,7 @@ public abstract class Game {
         endGameIfNoActivePlayers();
     }
 
-    // Métodos abstractos para elección de ficha
+    // Métodos para elección de ficha
     protected abstract Piece choosePieceFromBase(List<Piece> piecesInBase);
     protected abstract Piece choosePieceOnSix(List<Piece> piecesInBase, List<Piece> piecesOnBoard);
     protected abstract Piece choosePieceToMove(List<Piece> piecesOnBoard);

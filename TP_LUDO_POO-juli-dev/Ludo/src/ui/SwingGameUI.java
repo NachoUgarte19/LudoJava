@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Interfaz gráfica de Ludo: dibuja el tablero y muestra controles Swing.
+ * Interfaz grafica de Ludo: dibuja el tablero y muestra controles Swing.
  */
 public class SwingGameUI extends JFrame {
     private static final int GRID_SIZE = 15;
@@ -85,9 +85,9 @@ public class SwingGameUI extends JFrame {
     );
 
     private void refreshUI() {
-        // 1) Si el juego ya terminó y aún no hemos anunciado al ganador:
+        // si el juego ya terminó y aún no hemos anunciado al ganador:
         if (game.getState() != GameState.IN_PROGRESS && !winnerAnnounced) {
-            // Buscamos al único jugador que no se rindió
+            // buscamos al unico jugador que no se rindió
             Player winner = game.getPlayers().stream()
                     .filter(p -> !p.isRendido())
                     .findFirst()
@@ -103,20 +103,19 @@ public class SwingGameUI extends JFrame {
             winnerAnnounced = true;
         }
 
-        // ACTUALIZAR INFO PANEL
         infoPanel.removeAll();
         for (Player p : game.getPlayers()) {
-            // Contar fichas en meta
+            // contar fichas en meta
             long finishedCount = p.getPieces().stream().filter(Piece::isFinished).count();
 
-            // Panel por jugador
+            // panel por jugador
             JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
-            // Circulo de color
+            // circulo de color
             JLabel colorDot = new JLabel("  ");
             colorDot.setOpaque(true);
             colorDot.setBackground(toAwtColor(p.getColor()));
             colorDot.setPreferredSize(new Dimension(12, 12));
-            // Texto con nombre y contadores
+            // texto con nombre y contadores
             JLabel text = new JLabel(p.getName()
                     + " – Fichas en meta: " + finishedCount);
             row.add(colorDot);
@@ -131,7 +130,7 @@ public class SwingGameUI extends JFrame {
             currentPlayerLabel.setText("Turno de: " + p.getName() + " (" + p.getColor() + ")");
             rollResultLabel.setText("Resultado dado: " + game.getLastRoll());
             rollButton.setEnabled(true);
-            // Leer evento del modelo
+            // leer evento del modelo
             String ev = game.getBoard().fetchLastEvent();
             eventLabel.setText(ev.isEmpty() ? " " : ev);
             resignButton.setEnabled(true);
@@ -146,13 +145,13 @@ public class SwingGameUI extends JFrame {
         JPanel[][] cells = new JPanel[GRID_SIZE][GRID_SIZE];
         Point[] mainCoords = generateMainPath();
 
-        // Crear celdas base
+        // crear celdas base
         for (int row = 0; row < GRID_SIZE; row++) {
             for (int col = 0; col < GRID_SIZE; col++) {
                 JPanel cell = new JPanel();
                 cell.setBorder(BorderFactory.createLineBorder(java.awt.Color.DARK_GRAY));
                 cell.setBackground(getCellColor(row, col));
-                // Resaltar casilla de entrada para cada color
+                // resaltar casilla de entrada para cada color
                 int[] entryIndices = {1, 15, 29, 43};
                 core.Color[] entryColors = {
                         core.Color.RED, core.Color.GREEN, core.Color.YELLOW, core.Color.BLUE
@@ -181,7 +180,7 @@ public class SwingGameUI extends JFrame {
             }
         }
 
-        // Dibujar piezas en camino principal
+        // dibujar piezas en camino principal
         List<MainPathSquare> mainPath = game.getBoard().getMainPath();
         for (int i = 0; i < mainPath.size(); i++) {
             Point coord = mainCoords[i];
@@ -191,7 +190,7 @@ public class SwingGameUI extends JFrame {
             }
         }
 
-        // Mostrar piezas en casas
+        // mostrar piezas en casas
         for (var entry : game.getBoard().getHomeBaseSquares().entrySet()) {
             core.Color color = entry.getKey();
             Point[] coords = HOME_BASE_COORDS.get(color);
@@ -202,7 +201,7 @@ public class SwingGameUI extends JFrame {
             }
         }
 
-        // Mostrar piezas en caminos finales
+        // mostrar piezas en caminos finales
         for (Map.Entry<core.Color, List<FinalPathSquare>> entry : game.getBoard().getFinalPaths().entrySet()) {
             core.Color color = entry.getKey();
             for (FinalPathSquare square : entry.getValue()) {

@@ -17,13 +17,11 @@ public class SwingInteractiveGame extends Game {
 
     @Override
     protected Piece choosePieceFromBase(List<Piece> piecesInBase) {
-        // Sale un 6 y solo hay fichas en base
         return askForPiece("¡Sacaste un 6! Elige ficha de base:", piecesInBase);
     }
 
     @Override
     protected Piece choosePieceOnSix(List<Piece> piecesInBase, List<Piece> piecesOnBoard) {
-        // Sale un 6 y hay opción entre base o tablero
         String[] opciones = {"Sacar ficha de base", "Mover ficha en tablero"};
         int sel = JOptionPane.showOptionDialog(
                 null,
@@ -49,14 +47,14 @@ public class SwingInteractiveGame extends Game {
     }
 
     /**
-     * Muestra un cuadro de diálogo con la lista de IDs y devuelve la pieza seleccionada.
+     * Muestra un cuadro de dialogo con la lista de IDs y devuelve la pieza seleccionada.
      */
     private Piece askForPiece(String mensaje, List<Piece> lista) {
         String[] items = lista.stream()
                 .map(p -> "Ficha " + p.getId())
                 .toArray(String[]::new);
         String elegido = null;
-        // Repetir hasta que el usuario elija algo
+        // repetir hasta que el usuario elija algo
         while (elegido == null) {
             elegido = (String) JOptionPane.showInputDialog(
                     null,
@@ -68,7 +66,7 @@ public class SwingInteractiveGame extends Game {
                     items[0]
             );
             if (elegido == null) {
-                // El usuario cerró el diálogo o pulsó Cancelar: mostramos un mensaje y volvemos a pedir
+                // el usuario cerró el diálogo o pulso Cancelar
                 JOptionPane.showMessageDialog(
                         null,
                         "Debes seleccionar una ficha para continuar.",

@@ -47,24 +47,15 @@ public class Board {
         configureFinalPaths(players);
     }
 
-    // Añadir getters para la UI:
-    /**
-     * Devuelve la lista de casillas del camino principal.
-     */
+
     public List<MainPathSquare> getMainPath() {
         return mainPath;
     }
 
-    /**
-     * Devuelve el mapa de originales de casillas de base por color.
-     */
     public Map<Color, HomeBaseSquare> getHomeBaseSquares() {
         return homeBaseSquares;
     }
 
-    /**
-     * Devuelve los caminos finales por color.
-     */
     public Map<Color, List<FinalPathSquare>> getFinalPaths() {
         return finalPaths;
     }
@@ -88,11 +79,11 @@ public class Board {
     }
 
     public void placePieceOnBoard(Piece piece, MainPathSquare targetSquare) {
-        // Si la ficha estaba en alguna casilla (p. e. base), la quitamos de allí:
+        // Si la ficha estaba en alguna casilla la sacamos
         if (piece.getCurrentSquare() != null) {
             piece.getCurrentSquare().removePiece(piece);
         }
-        // Ahora la colocamos en el tablero:
+        // colocar en el tablero:
         handleLanding(piece, targetSquare, true);
     }
 
@@ -119,21 +110,18 @@ public class Board {
 
     private void moveOnMainPath(Piece piece, MainPathSquare current, int roll) {
         int entry = ENTRY_POS.get(piece.getColor());
-        int pathSize = mainPathSize;   // 56 en tu caso
+        int pathSize = mainPathSize;
 
-        // posición actual en [0..pathSize-1]
         int pos = current.getPosition();
-
-        // calculamos cuánto hemos avanzado desde la entrada, en modo circular:
         int rel = (pos - entry + pathSize) % pathSize;
         int relNext = rel + roll;
 
         if (relNext >= pathSize) {
-            // ¡completaste la vuelta! pasas al primer FinalPathSquare
+            //  pasar al primer FinalPathSquare
             FinalPathSquare fps = finalPaths.get(piece.getColor()).get(0);
             handleLanding(piece, fps, false);
         } else {
-            // aún no diste la vuelta: nueva posición circular
+            // no diste la vuelta: nueva posición circular
             int newPos = (entry + relNext) % pathSize;
             MainPathSquare target = mainPath.get(newPos);
             handleLanding(piece, target, false);
@@ -147,7 +135,6 @@ public class Board {
         int next = pos + roll;
 
         if (next >= 0 && next < FINAL_PATH_LENGTH - 1) {
-            // Avanza normalmente dentro del tramo
             handleLanding(piece, fp.get(next), false);
         } else if (next == FINAL_PATH_LENGTH - 1) {
             // Llegada exacta a la última casilla (meta)
@@ -168,17 +155,11 @@ public class Board {
                 List<Piece> piecesOnTargetCopy = new ArrayList<>(targetSquare.getPieces());
                 for (Piece existingPiece : piecesOnTargetCopy) {
                     if (existingPiece != movingPiece && existingPiece.getColor() != movingPiece.getColor()) {
-                        // Construyo el mensaje y lo guardo en el modelo
                         lastEventMessage = movingPiece.getColor() + " capturó ficha " + existingPiece.getId() +
                                 " de color " + existingPiece.getColor();
-                        // 1) Retirar de la casilla:
                         targetSquare.removePiece(existingPiece);
-
-                        // 2) Añadir a la base de su color:
                         HomeBaseSquare home = homeBaseSquares.get(existingPiece.getColor());
                         home.addPiece(existingPiece);
-
-                        // 3) Decirle a la pieza dónde está ahora:
                         existingPiece.moveTo(home);
                     }
                 }
@@ -211,7 +192,6 @@ public class Board {
      * Devuelve la casilla central del tablero (donde convergen todas las fichas al final).
      */
     public MainPathSquare getCentralSquare() {
-        // Usa el índice medio del mainPath
         int centerIdx = mainPathSize / 2;
         return mainPath.get(centerIdx);
     }

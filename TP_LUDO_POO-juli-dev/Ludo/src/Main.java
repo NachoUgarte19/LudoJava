@@ -7,7 +7,7 @@ import ui.SwingGameConfigUI;
  */
 public class Main {
     public static void main(String[] args) {
-        // Diálogo para seleccionar modo de juego
+        // seleccionar modo
         String[] modos = {"Consola", "Gráfica"};
         int seleccion = JOptionPane.showOptionDialog(
                 null,
@@ -21,10 +21,8 @@ public class Main {
         );
 
         if (seleccion == 0) {
-            // Inicia la versión de consola
             ConsoleGameUI.main(args);
         } else {
-            // Inicia la versión gráfica
             SwingGameConfigUI.main(args);
         }
     }

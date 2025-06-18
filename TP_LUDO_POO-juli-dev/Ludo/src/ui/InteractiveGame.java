@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Scanner;
 
 /**
- * Lógica de juego interactiva para consola: extiende Game y pide fichas vía Scanner.
+ * Logica de juego interactiva para consola: extiende Game y pide fichas vía Scanner.
  */
 public class InteractiveGame extends Game {
     private final Scanner scanner = new Scanner(System.in);
@@ -49,9 +49,7 @@ public class InteractiveGame extends Game {
         return promptForPiece(piecesOnBoard);
     }
 
-    /**
-     * Pide al usuario por consola que seleccione un ID de ficha.
-     */
+    // elegir ficha por id
     private Piece promptForPiece(List<Piece> list) {
         System.out.println("Fichas disponibles:");
         for (Piece p : list) {

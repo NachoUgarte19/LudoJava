@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Ventana de configuración para la versión Swing de Ludo.
+ * Ventana de configuracion para la versión Swing de Ludo.
  */
 public class SwingGameConfigUI extends JFrame {
     private final SpinnerNumberModel spinnerModel;
@@ -105,8 +105,6 @@ public class SwingGameConfigUI extends JFrame {
             players.add(p);
         }
 
-        // Aquí instanciamos la versión Swing de la lógica interactiva
-        // Después:
         Game game = new SwingInteractiveGame(players, 56);
         SwingUtilities.invokeLater(() -> {
             SwingGameUI ui = new SwingGameUI(game);
